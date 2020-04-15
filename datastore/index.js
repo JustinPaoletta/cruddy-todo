@@ -45,7 +45,6 @@ exports.readAll = (callback) => {
       return readFilePromise(ourFilePath).then((fileData) => {
         return {
           id: id,
-          // text: id
           text: fileData.toString()
         };
       });
@@ -78,34 +77,40 @@ exports.update = (id, text, callback) => {
   let filePath = exports.dataDir;
   let ourFilePath = path.join(filePath, `${id}.txt`);
 
-  fs.writeFile(ourFilePath, text, (err) => {
-    var item = items[id];
-    if (!item) {
+  // we have to read our file ...if we cant theres not a valid id in the path
+  fs.readFile(ourFilePath, (err, data) => {
+    // if it cant read ...error
+    if (err) {
       callback(new Error(`No item with id: ${id}`));
     } else {
-      items[id] = text;
-      callback(null, { id: id, text: text });
+      // if we can read it then write to it
+      fs.writeFile(ourFilePath, text, (err) => {
+        // if theres an error writing to it throw an error
+        if (err) {
+          callback(new Error(`No item with id: ${id}`));
+          // otherwise callback like we did in previous functions
+        } else {
+          callback(null, {id: id, text: text});
+        }
+      });
     }
-
   });
-
-  // if (!item) {
-  //   callback(new Error(`No item with id: ${id}`));
-  // } else {
-  //   items[id] = text;
-  //   callback(null, { id, text });
-  // }
 };
 
+
 exports.delete = (id, callback) => {
-  var item = items[id];
-  delete items[id];
-  if (!item) {
-    // report an error if item not found
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback();
-  }
+
+  let filePath = exports.dataDir;
+  let ourFilePath = path.join(filePath, `${id}.txt`);
+
+  fs.unlink(ourFilePath, (err, data) => {
+    if (err) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      callback(null);
+    }
+  });
+
 };
 
 // Config+Initialization code -- DO NOT MODIFY /////////////////////////////////
